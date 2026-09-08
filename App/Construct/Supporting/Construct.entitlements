@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Outbound network access to my.construct.space and friends. -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    <!-- App sandbox is intentionally disabled for now: the app spawns dev
+         tooling (shell, PTY, LSP, brain sidecar). Revisit with a hardened
+         sandbox + per-capability entitlements as those land.
+         A keychain-access-group is omitted until a DEVELOPMENT_TEAM is set;
+         single-app keychain access works without one. -->
+</dict>
+</plist>

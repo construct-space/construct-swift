@@ -1,0 +1,113 @@
+name: Construct
+options:
+  bundleIdPrefix: space.construct
+  deploymentTarget:
+    macOS: "27.0"
+  createIntermediateGroups: true
+  defaultConfig: Debug
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_STRICT_CONCURRENCY: complete
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+
+targets:
+  # Shared, platform-agnostic core: models, networking, auth, stores.
+  ConstructCore:
+    type: framework
+    platform: macOS
+    sources:
+      - path: Sources/ConstructCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: space.construct.core
+        GENERATE_INFOPLIST_FILE: true
+
+  # WKWebView-based host for running Spaces as WebUI.
+  SpaceHost:
+    type: framework
+    platform: macOS
+    sources:
+      - path: Sources/SpaceHost
+    dependencies:
+      - target: ConstructCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: space.construct.spacehost
+        GENERATE_INFOPLIST_FILE: true
+
+  # The macOS app.
+  Construct:
+    type: application
+    platform: macOS
+    sources:
+      - path: App/Construct
+        excludes:
+          - "Resources/sidecars"
+      # The Go brain binary has no extension, so XcodeGen won't treat it as a
+      # resource. Copy the whole sidecars folder as a folder reference instead.
+      # Built on demand by scripts/build-brain.sh (gitignored); optional so a
+      # fresh checkout can still generate the project before the brain exists.
+      - path: App/Construct/Resources/sidecars
+        type: folder
+        buildPhase: resources
+        optional: true
+    dependencies:
+      - target: ConstructCore
+      - target: SpaceHost
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: space.construct.app
+        PRODUCT_NAME: Construct
+        INFOPLIST_FILE: App/Construct/Supporting/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/Construct/Supporting/Construct.entitlements
+        COMBINE_HIDPI_IMAGES: true
+    configs:
+      Debug:
+        ENABLE_HARDENED_RUNTIME: false
+      Release:
+        ENABLE_HARDENED_RUNTIME: true
+
+  # Unit tests for the core.
+  ConstructCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/ConstructCoreTests
+    dependencies:
+      - target: ConstructCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: space.construct.core.tests
+        GENERATE_INFOPLIST_FILE: true
+
+  # Unit tests for the space host bridge.
+  SpaceHostTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/SpaceHostTests
+    dependencies:
+      - target: SpaceHost
+      - target: ConstructCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: space.construct.spacehost.tests
+        GENERATE_INFOPLIST_FILE: true
+
+schemes:
+  Construct:
+    build:
+      targets:
+        Construct: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - ConstructCoreTests
+        - SpaceHostTests

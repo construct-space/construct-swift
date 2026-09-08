@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Construct Space</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { font-family: -apple-system, system-ui, sans-serif; display: flex; flex-direction: column; }
+    /* Host toolbar regions spaces Teleport into (#toolbar-left/center/right).
+       Must exist before the space mounts. A proper toolbar row below the native
+       title bar — like the Tauri Toolbar3D. */
+    #construct-toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px; min-height: 44px; flex: 0 0 auto;
+      border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    }
+    /* Collapse the bar when no space has teleported anything into it. */
+    #construct-toolbar:not(:has(> div > *)) { display: none; }
+    #toolbar-left { display: flex; align-items: center; gap: 6px; }
+    #toolbar-right { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    #toolbar-center { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    #app { flex: 1 1 auto; min-height: 0; overflow: auto; }
+    #__err { padding: 16px; color: #b00020; white-space: pre-wrap; font: 12px/1.5 ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <div id="construct-toolbar">
+    <div id="toolbar-left"></div>
+    <div id="toolbar-center"></div>
+    <div id="toolbar-right"></div>
+  </div>
+  <!-- Prebuilt Tailwind v4 + @construct-space/ui styles, shipped by the desktop
+       so spaces don't each bundle Tailwind. The space's own style.css is
+       injected by the runtime afterwards (so it wins). -->
+  <link rel="stylesheet" href="__base__.css" />
+
+  <div id="app"></div>
+
+  <!-- Surface any uncaught error/rejection so blank screens become debuggable. -->
+  <script>
+    function __showErr(msg) {
+      var el = document.getElementById('app');
+      if (el) el.innerHTML = '<pre id="__err">' + String(msg).replace(/[<>&]/g, '') + '</pre>';
+    }
+    window.addEventListener('error', function (e) { __showErr('error: ' + (e.message || e.error)); });
+    window.addEventListener('unhandledrejection', function (e) { __showErr('rejection: ' + (e.reason && e.reason.message || e.reason)); });
+  </script>
+
+  <!-- 1. Runtime: defines window.ConstructSpaceShell. window.construct is
+       injected natively by the Swift bridge at document start. -->
+  <script src="__runtime__.js"></script>
+
+  <!-- 2. Populate window.__CONSTRUCT__ BEFORE the bundle loads — the space
+       IIFE reads window.__CONSTRUCT__.vue at invocation time. -->
+  <script>
+    if (!window.ConstructSpaceShell) { __showErr('space-shell runtime failed to load'); }
+    else { window.ConstructSpaceShell.initHost(); }
+  </script>
+
+  <!-- 3. The space bundle: registers window.__CONSTRUCT_SPACE_<ID>. -->
+  <script src="app.iife.js"></script>
+
+  <!-- 4. Mount the space's pages. -->
+  <script>
+    (function () {
+      var shell = window.ConstructSpaceShell;
+      if (!shell) return;
+      var boot = window.__SPACE_BOOT__ || { id: '' };
+      Promise.resolve(shell.mount(boot)).catch(function (e) {
+        __showErr('mount failed: ' + (e && e.message || e));
+      });
+    })();
+  </script>
+</body>
+</html>

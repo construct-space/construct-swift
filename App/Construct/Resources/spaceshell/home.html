@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Construct Home</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { font-family: -apple-system, system-ui, sans-serif; }
+    #app { height: 100%; }
+    #__err { padding: 16px; color: #b00020; white-space: pre-wrap; font: 12px ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <script>
+    function __showErr(m){var e=document.getElementById('app');if(e)e.innerHTML='<pre id="__err">'+String(m)+'</pre>';}
+    window.addEventListener('error', function(e){ console.error('home error:', e.message); });
+  </script>
+  <link rel="stylesheet" href="__base__.css" />
+  <div id="app"></div>
+  <!-- 1. runtime (window.construct injected natively) -->
+  <script src="__runtime__.js"></script>
+  <!-- 2. init host packages, then render the widget dashboard. Widget bundles
+       are loaded dynamically by mountWidgets from each space's space:// path. -->
+  <script>
+    (function () {
+      var shell = window.ConstructSpaceShell;
+      if (!shell) { __showErr('runtime failed to load'); return; }
+      shell.initHost();
+      var boot = window.__WIDGETS_BOOT__ || { widgets: [] };
+      Promise.resolve(shell.mountWidgets(boot)).catch(function (e) { __showErr('mount failed: ' + (e && e.message || e)); });
+    })();
+  </script>
+</body>
+</html>

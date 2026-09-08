@@ -1,0 +1,5 @@
+@import "tailwindcss";
+/* Prebuilt for the desktop: scan the whole Construct space ecosystem so every
+   utility any space uses is generated once, here — spaces don't ship their own. */
+@source "/Users/flakerimi/Spaces";
+@source "/Users/flakerimi/Construct/apps/construct-app/frontend";
